@@ -9,33 +9,60 @@ import dummyData from './dummy-data';
 import endpoint from './endpoint';
 import './styles.scss';
 
+const initialState = {
+  result: null,
+  loading: true,
+  error: null,
+};
+
+const fetchReducer = (state, action) => {
+  if (action.type === 'LOADING') {
+    return {
+      result: null,
+      loading: true,
+      error: null,
+    };
+  }
+  if (action.type === 'RESPONSE_COMPLETE') {
+    return {
+      result: action.payload.response,
+      loading: false,
+      error: null,
+    };
+  }
+  if (action.type === 'ERROR') {
+    return {
+      result: null,
+      loading: false,
+      error: action.payload.error,
+    };
+  }
+
+  return state;
+};
+
 const useFetch = (url) => {
-  const [response, setResponse] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [state, dispatch] = useReducer(fetchReducer, initialState);
 
   useEffect(() => {
-    setLoading(true);
-    setResponse([]);
-    setError(null);
+    dispatch({ type: 'LOADING' });
 
-    fetch(url + '/characters')
+    fetch(url)
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
-        setResponse(response);
+        dispatch({ type: 'RESPONSE_COMPLETE', payload: { response } });
       })
       .catch((error) => {
-        setLoading(false);
-        setError(error);
+        dispatch({ type: 'ERROR', payload: { error } });
       });
   }, []);
-  return [response, loading, error];
+
+  return [state.result, state.loading, state.error];
 };
 
 const Application = () => {
   const [response, loading, error] = useFetch(endpoint + '/characters');
-  const chachters = (response && response.characters) || [];
+  const characters = (response && response.characters) || [];
 
   return (
     <div className="Application">
